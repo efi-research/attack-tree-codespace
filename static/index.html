@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attack Tree Generator</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🛡️ Attack Tree Generator</h1>
+            <p class="subtitle">Generate visual attack trees from security scenarios using AI</p>
+        </header>
+
+        <main>
+            <!-- Input Section -->
+            <section class="input-section">
+                <h2>Define Your Security Scenario</h2>
+                <form id="scenarioForm">
+                    <div class="form-group">
+                        <label for="title">Scenario Title</label>
+                        <input
+                            type="text"
+                            id="title"
+                            name="title"
+                            placeholder="e.g., Web Application Breach"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="description">Description</label>
+                        <textarea
+                            id="description"
+                            name="description"
+                            rows="6"
+                            placeholder="Describe the attack scenario in detail. For example: An attacker wants to gain unauthorized access to a company web application to steal customer data. The application uses authentication, has a database backend, and is hosted on cloud infrastructure."
+                            required
+                        ></textarea>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" id="generateBtn" class="btn btn-primary">
+                            <span class="btn-text">Generate Attack Tree</span>
+                            <span class="spinner" style="display: none;">⏳</span>
+                        </button>
+                        <button type="button" id="clearBtn" class="btn btn-secondary">Clear</button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Loading State -->
+            <div id="loadingState" class="loading-state" style="display: none;">
+                <div class="spinner-large">⏳</div>
+                <p>Generating attack tree with AI...</p>
+            </div>
+
+            <!-- Error State -->
+            <div id="errorState" class="error-state" style="display: none;">
+                <div class="error-icon">❌</div>
+                <h3>Error</h3>
+                <p id="errorMessage"></p>
+                <button class="btn btn-secondary" onclick="hideError()">Dismiss</button>
+            </div>
+
+            <!-- Results Section -->
+            <section id="resultsSection" class="results-section" style="display: none;">
+                <div class="results-header">
+                    <h2>Attack Tree Results</h2>
+                    <div class="format-selector">
+                        <label>Format:</label>
+                        <button class="format-btn active" data-format="svg" onclick="switchFormat('svg')">SVG</button>
+                        <button class="format-btn" data-format="png" onclick="switchFormat('png')">PNG</button>
+                    </div>
+                </div>
+
+                <!-- Tree Visualization -->
+                <div class="visualization-container">
+                    <div id="treeVisualization" class="tree-visualization"></div>
+                </div>
+
+                <!-- JSON Output -->
+                <details class="json-details">
+                    <summary>View JSON Data</summary>
+                    <pre id="jsonOutput" class="json-output"></pre>
+                </details>
+
+                <!-- Action Buttons -->
+                <div class="result-actions">
+                    <button class="btn btn-secondary" onclick="downloadImage()">
+                        📥 Download Image
+                    </button>
+                    <button class="btn btn-secondary" onclick="downloadJSON()">
+                        📄 Download JSON
+                    </button>
+                    <button class="btn btn-primary" onclick="generateNew()">
+                        ➕ Generate New Tree
+                    </button>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>Powered by AI | Built with FastAPI</p>
+        </footer>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
