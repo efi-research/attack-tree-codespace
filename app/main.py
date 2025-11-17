@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Response, Query
+from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -7,8 +7,6 @@ from app.llm_client import generate_attack_tree_text
 from app.prompt_utils import build_prompt, extract_first_json
 from app.tree_types import AttackTree
 import json
-from app.renderer import render_graph
-from typing import Optional
 import os
 
 app = FastAPI(title="Attack Tree Generator")
@@ -57,13 +55,3 @@ async def generate(s: ScenarioIn):
         raise HTTPException(status_code=400, detail=f"Validation error: {e}")
 
     return tree.model_dump()
-
-@app.post("/render")
-async def render(tree: AttackTree, format: Optional[str] = Query("png", pattern="^(png|svg)$")):
-    try:
-        out = render_graph(tree, fmt=format)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Render failed: {e}")
-
-    media_type = "image/png" if format == "png" else "image/svg+xml"
-    return Response(content=out, media_type=media_type)

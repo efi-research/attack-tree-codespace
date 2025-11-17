@@ -1,21 +1,22 @@
 # Attack Tree Generator
 
-Generate visual attack trees from security scenarios using AI. This application uses LLMs to automatically create structured attack trees and renders them as interactive visualizations using Graphviz.
+Generate visual attack trees from security scenarios using AI. This application uses LLMs to automatically create structured attack trees and renders them as interactive visualizations using D3.js.
 
 ## Features
 
 - 🤖 **AI-Powered Generation**: Uses OpenAI GPT models to generate attack trees from natural language descriptions
-- 🎨 **Visual Rendering**: Renders attack trees as PNG or SVG images using Graphviz
+- 🎨 **Frontend Rendering**: Renders attack trees as SVG visualizations using D3.js directly in the browser
+- 💾 **Multiple Export Formats**: Download as PNG or SVG
 - 🌐 **Web Interface**: User-friendly browser-based UI for easy interaction
 - 📊 **JSON Export**: Download attack tree data in JSON format for further analysis
-- 🔄 **Real-time Preview**: See your attack tree visualization immediately after generation
+- ⚡ **Instant Visualization**: See your attack tree immediately after generation with no server round-trip
 - 📱 **Responsive Design**: Works on desktop and mobile devices
 
 ## Quick Start
 
 ### Option 1: GitHub Codespaces (Recommended)
 1. Open this repository in GitHub Codespaces
-2. The devcontainer will auto-install all dependencies (Python, Graphviz, etc.)
+2. The devcontainer will auto-install all dependencies
 3. Copy `.env.example` to `.env` and add your `OPENAI_API_KEY`
 4. Run the server:
    ```bash
@@ -24,13 +25,13 @@ Generate visual attack trees from security scenarios using AI. This application 
 5. Open your browser to `http://localhost:8080`
 
 ### Option 2: Local Installation
-1. Install Python 3.11+ and Graphviz:
+1. Install Python 3.11+:
    ```bash
    # macOS
-   brew install python graphviz
+   brew install python
 
    # Ubuntu/Debian
-   sudo apt-get install python3 python3-pip graphviz
+   sudo apt-get install python3 python3-pip
    ```
 
 2. Install Python dependencies:
@@ -62,13 +63,13 @@ Generate visual attack trees from security scenarios using AI. This application 
    - Wait for AI to analyze and create the tree structure
 
 3. **View Results**:
-   - See the visual representation of the attack tree
-   - Switch between SVG and PNG formats
+   - See the interactive visual representation of the attack tree (rendered with D3.js)
+   - Toggle between SVG and PNG format buttons
    - Expand JSON data to see the raw structure
 
 4. **Download**:
-   - Download the image (PNG/SVG)
-   - Download the JSON data for further analysis
+   - Click "Download Image" to save as PNG or SVG (based on selected format)
+   - Click "Download JSON" to save the attack tree data for further analysis
 
 **Pro Tip**: Press `Ctrl+Shift+S` to auto-fill sample data for testing!
 
@@ -85,10 +86,7 @@ Generate visual attack trees from security scenarios using AI. This application 
 - **Body**: `{"title": "string", "description": "string"}`
 - **Returns**: JSON attack tree structure
 
-### Render Attack Tree
-- `POST /render?format=svg|png`
-- **Body**: Attack tree JSON
-- **Returns**: Image (SVG or PNG)
+**Note**: Tree rendering is now performed entirely in the frontend using D3.js. The attack tree JSON returned by `/generate` is visualized directly in the browser.
 
 ## Example CURL Commands
 
@@ -102,14 +100,6 @@ curl -X POST http://localhost:8080/generate \
   }'
 ```
 
-Render attack tree:
-```bash
-curl -X POST "http://localhost:8080/render?format=svg" \
-  -H "Content-Type: application/json" \
-  -d @attack_tree.json \
-  -o attack_tree.svg
-```
-
 ## Project Structure
 
 ```
@@ -119,12 +109,11 @@ curl -X POST "http://localhost:8080/render?format=svg" \
 │   ├── main.py              # FastAPI app and endpoints
 │   ├── tree_types.py        # Pydantic models
 │   ├── llm_client.py        # OpenAI integration
-│   ├── prompt_utils.py      # Prompt engineering
-│   └── renderer.py          # Graphviz rendering
+│   └── prompt_utils.py      # Prompt engineering
 ├── static/
 │   ├── index.html           # Web interface
 │   ├── styles.css           # Styling
-│   └── app.js               # Frontend logic
+│   └── app.js               # Frontend logic with D3.js rendering
 ├── tests/
 │   ├── test_parser.py       # Unit tests
 │   └── test_integration.py  # Integration tests
@@ -158,8 +147,6 @@ Run only integration tests:
 pytest tests/test_integration.py -v
 ```
 
-**Note**: Rendering tests require Graphviz to be installed. They will be skipped if Graphviz is not available.
-
 ## Development
 
 The application supports hot-reload during development. Any changes to Python files will automatically restart the server.
@@ -167,16 +154,6 @@ The application supports hot-reload during development. Any changes to Python fi
 For frontend development, simply edit files in `static/` and refresh your browser.
 
 ## Troubleshooting
-
-### "Graphviz not found" error
-- **Solution**: Install Graphviz system package
-  ```bash
-  # macOS
-  brew install graphviz
-
-  # Ubuntu/Debian
-  sudo apt-get install graphviz
-  ```
 
 ### "OpenAI API key not configured" error
 - **Solution**: Make sure you've created a `.env` file with your `OPENAI_API_KEY`
@@ -186,6 +163,9 @@ For frontend development, simply edit files in `static/` and refresh your browse
   ```bash
   uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
   ```
+
+### Visualization not appearing
+- **Solution**: Make sure JavaScript is enabled in your browser. The visualization is rendered client-side using D3.js.
 
 ## License
 
