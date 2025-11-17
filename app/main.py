@@ -30,10 +30,10 @@ async def generate(s: ScenarioIn):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Validation error: {e}")
 
-    return tree.dict()
+    return tree.model_dump()
 
 @app.post("/render")
-async def render(tree: AttackTree, format: Optional[str] = Query("png", regex="^(png|svg)$")):
+async def render(tree: AttackTree, format: Optional[str] = Query("png", pattern="^(png|svg)$")):
     try:
         out = render_graph(tree, fmt=format)
     except Exception as e:

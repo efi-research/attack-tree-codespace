@@ -17,7 +17,7 @@ def render_graph(tree: AttackTree, fmt: str = "png") -> bytes:
         if node.cost is not None:
             extras.append(f"C={node.cost}")
         if extras:
-            label = f"{label}\\n({' ,'.join(extras)})"
+            label = f"{label}\\n({', '.join(extras)})"
         g.node(node.id, label)
 
     # edges

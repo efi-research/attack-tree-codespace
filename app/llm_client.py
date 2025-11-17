@@ -15,25 +15,23 @@ async def generate_attack_tree_text(prompt: str, timeout: Optional[int] = 30) ->
     """
     Call LLM and return raw text. Minimal retries included.
     """
-    import openai
+    from openai import AsyncOpenAI
 
     if not OPENAI_API_KEY:
         raise RuntimeError("OPENAI_API_KEY not configured")
 
-    openai.api_key = OPENAI_API_KEY
+    client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 
-    # Use ChatCompletion API as an example. Adjust to your provider & credentials.
+    # Use ChatCompletion API (OpenAI v1.0+ format)
     for attempt in range(2):
         try:
-            resp = openai.ChatCompletion.create(
+            resp = await client.chat.completions.create(
                 model=LLM_MODEL,
                 messages=[{"role": "user", "content": prompt}],
                 max_tokens=800,
                 temperature=0.2
             )
-            # Basic compatibility: some clients return different shapes
-            content = resp.choices[0].message.content if hasattr(resp.choices[0], 'message') else resp.choices[0].text
-            return content
+            return resp.choices[0].message.content
         except Exception as e:
             if attempt == 1:
                 raise
