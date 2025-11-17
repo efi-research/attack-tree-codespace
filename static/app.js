@@ -79,7 +79,7 @@ function renderTreeD3(treeData) {
     // Set up SVG dimensions
     const width = 1200;
     const height = 800;
-    const margin = { top: 40, right: 120, bottom: 40, left: 120 };
+    const margin = { top: 60, right: 40, bottom: 40, left: 40 };
 
     // Create SVG element
     const svg = d3.select('#treeVisualization')
@@ -92,9 +92,9 @@ function renderTreeD3(treeData) {
     const g = svg.append('g')
         .attr('transform', `translate(${margin.left},${margin.top})`);
 
-    // Create tree layout
+    // Create tree layout (vertical: root at top)
     const treeLayout = d3.tree()
-        .size([height - margin.top - margin.bottom, width - margin.left - margin.right]);
+        .size([width - margin.left - margin.right, height - margin.top - margin.bottom]);
 
     // Create hierarchy
     const root = d3.hierarchy(hierarchyData);
@@ -111,9 +111,9 @@ function renderTreeD3(treeData) {
         .attr('fill', 'none')
         .attr('stroke', '#64748b')
         .attr('stroke-width', 2)
-        .attr('d', d3.linkHorizontal()
-            .x(d => d.y)
-            .y(d => d.x));
+        .attr('d', d3.linkVertical()
+            .x(d => d.x)
+            .y(d => d.y));
 
     // Draw nodes
     const node = g.selectAll('.node')
@@ -121,20 +121,20 @@ function renderTreeD3(treeData) {
         .enter()
         .append('g')
         .attr('class', 'node')
-        .attr('transform', d => `translate(${d.y},${d.x})`);
+        .attr('transform', d => `translate(${d.x},${d.y})`);
 
     // Add rectangles for nodes
     node.append('rect')
-        .attr('width', d => d.depth === 0 ? 160 : 140)
+        .attr('width', d => d.depth === 0 ? 170 : 150)
         .attr('height', d => {
-            // Calculate height based on label content
+            // Calculate height based on label content with padding
             const lines = d.data.label.split('\n').length;
-            return Math.max(50, lines * 20 + 10);
+            return Math.max(60, lines * 18 + 20);
         })
-        .attr('x', d => d.depth === 0 ? -80 : -70)
+        .attr('x', d => d.depth === 0 ? -85 : -75)
         .attr('y', d => {
             const lines = d.data.label.split('\n').length;
-            const height = Math.max(50, lines * 20 + 10);
+            const height = Math.max(60, lines * 18 + 20);
             return -height / 2;
         })
         .attr('rx', 5)
@@ -146,7 +146,7 @@ function renderTreeD3(treeData) {
     node.each(function(d) {
         const nodeGroup = d3.select(this);
         const lines = d.data.label.split('\n');
-        const lineHeight = 16;
+        const lineHeight = 18;
         const startY = -(lines.length - 1) * lineHeight / 2;
 
         lines.forEach((line, i) => {
@@ -163,22 +163,49 @@ function renderTreeD3(treeData) {
     return svg.node();
 }
 
+// Wrap text to fit within a specified width
+function wrapText(text, maxWidth) {
+    const words = text.split(/\s+/);
+    const lines = [];
+    let currentLine = '';
+
+    words.forEach(word => {
+        const testLine = currentLine ? `${currentLine} ${word}` : word;
+        // Rough estimate: ~7 pixels per character for 12px font
+        const estimatedWidth = testLine.length * 7;
+
+        if (estimatedWidth > maxWidth && currentLine) {
+            lines.push(currentLine);
+            currentLine = word;
+        } else {
+            currentLine = testLine;
+        }
+    });
+
+    if (currentLine) {
+        lines.push(currentLine);
+    }
+
+    return lines;
+}
+
 // Convert attack tree JSON to D3 hierarchy format
 function convertToHierarchy(treeData) {
     // Create a map of all nodes by ID
     const nodeMap = new Map();
 
-    // Add root node
+    // Add root node with wrapped text
+    const rootLabel = wrapText(treeData.goal, 150).join('\n');
     const rootNode = {
         id: 'root',
-        label: treeData.goal,
+        label: rootLabel,
         children: []
     };
     nodeMap.set('root', rootNode);
 
     // Add all other nodes
     treeData.nodes.forEach(node => {
-        const label = buildNodeLabel(node);
+        const label = buildNodeLabel(node, false);
         nodeMap.set(node.id, {
             id: node.id,
             label: label,
@@ -221,11 +248,16 @@ function convertToHierarchy(treeData) {
     return rootNode;
 }
 
-// Build node label with metrics
-function buildNodeLabel(node) {
-    let label = node.text;
-    const extras = [];
+// Build node label with metrics (returns object with lines and metadata)
+function buildNodeLabel(node, isRoot = false) {
+    // Determine max width based on node type
+    const maxWidth = isRoot ? 150 : 130;
 
+    // Wrap the main text
+    const textLines = wrapText(node.text, maxWidth);
+
+    // Add metrics on a separate line if present
+    const extras = [];
     if (node.probability !== null && node.probability !== undefined) {
         extras.push(`P=${node.probability}`);
     }
@@ -234,10 +266,10 @@ function buildNodeLabel(node) {
     }
 
     if (extras.length > 0) {
-        label += '\n(' + extras.join(', ') + ')';
+        textLines.push('(' + extras.join(', ') + ')');
     }
 
-    return label;
+    return textLines.join('\n');
 }
 
 // Display results in UI
@@ -247,6 +279,16 @@ function displayResults(treeData) {
 
     // Render the tree using D3
     renderTreeD3(treeData);
+
+    // Initialize format selector to SVG
+    currentFormat = 'svg';
+    document.querySelectorAll('.toggle-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.format === 'svg');
+    });
+    const downloadBtnText = document.getElementById('downloadBtnText');
+    if (downloadBtnText) {
+        downloadBtnText.textContent = 'Download SVG';
+    }
 
     // Show results section
     showResults();
@@ -258,14 +300,19 @@ function switchFormat(format) {
 
     currentFormat = format;
 
-    // Update button states
-    document.querySelectorAll('.format-btn').forEach(btn => {
+    // Update toggle button states
+    document.querySelectorAll('.toggle-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.format === format);
     });
 
+    // Update download button text
+    const downloadBtnText = document.getElementById('downloadBtnText');
+    if (downloadBtnText) {
+        downloadBtnText.textContent = `Download ${format.toUpperCase()}`;
+    }
+
     // Note: The visualization is always SVG in the DOM.
     // PNG conversion happens only during download.
-    // We could add visual feedback here if needed, but the SVG display works for both formats.
 }
 
 // Convert SVG to PNG using Canvas

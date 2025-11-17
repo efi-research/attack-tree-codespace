@@ -68,11 +68,6 @@
             <section id="resultsSection" class="results-section" style="display: none;">
                 <div class="results-header">
                     <h2>Attack Tree Results</h2>
-                    <div class="format-selector">
-                        <label>Format:</label>
-                        <button class="format-btn active" data-format="svg" onclick="switchFormat('svg')">SVG</button>
-                        <button class="format-btn" data-format="png" onclick="switchFormat('png')">PNG</button>
-                    </div>
                 </div>
 
                 <!-- Tree Visualization -->
@@ -88,9 +83,22 @@
 
                 <!-- Action Buttons -->
                 <div class="result-actions">
-                    <button class="btn btn-secondary" onclick="downloadImage()">
-                        📥 Download Image
-                    </button>
+                    <!-- Download Image Group -->
+                    <div class="download-group">
+                        <div class="download-format-toggle">
+                            <label class="toggle-label">Download as:</label>
+                            <div class="format-toggle">
+                                <button class="toggle-btn active" data-format="svg" onclick="switchFormat('svg')">SVG</button>
+                                <button class="toggle-btn" data-format="png" onclick="switchFormat('png')">PNG</button>
+                            </div>
+                        </div>
+                        <button class="btn btn-download" onclick="downloadImage()">
+                            <span class="download-icon">📥</span>
+                            <span id="downloadBtnText">Download SVG</span>
+                        </button>
+                    </div>
+
+                    <!-- Other Actions -->
                     <button class="btn btn-secondary" onclick="downloadJSON()">
                         📄 Download JSON
                     </button>
