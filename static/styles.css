@@ -455,3 +455,120 @@ footer {
 .results-section {
     animation: fadeIn 0.3s ease-out;
 }
+
+/* Login Section */
+.login-section {
+    background: var(--surface);
+    padding: 3rem;
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    margin-bottom: 2rem;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.login-content {
+    text-align: center;
+}
+
+.login-icon {
+    font-size: 4rem;
+    margin-bottom: 1.5rem;
+    opacity: 0.9;
+}
+
+.login-content h2 {
+    font-size: 1.75rem;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+}
+
+.login-description {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+    max-width: 480px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.login-note {
+    margin-top: 1.5rem;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+.btn-large {
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+    width: 100%;
+    max-width: 320px;
+    justify-content: center;
+    margin: 0 auto;
+    display: inline-flex;
+}
+
+/* Header with Auth */
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 2rem;
+}
+
+.auth-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: var(--surface);
+    padding: 0.75rem 1.25rem;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+}
+
+.user-name {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.btn-small {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+    .header-content {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .auth-info {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .login-section {
+        padding: 2rem;
+    }
+
+    .login-icon {
+        font-size: 3rem;
+    }
+
+    .login-content h2 {
+        font-size: 1.5rem;
+    }
+
+    .login-description {
+        font-size: 0.95rem;
+    }
+
+    .btn-large {
+        max-width: 100%;
+        font-size: 1rem;
+    }
+}

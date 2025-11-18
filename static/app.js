@@ -1,3 +1,52 @@
+// Authentication state
+let currentUser = null;
+
+// Check authentication status on page load
+async function checkAuthStatus() {
+    try {
+        const response = await fetch('/auth/user');
+        const data = await response.json();
+
+        if (data.authenticated) {
+            currentUser = data.user;
+            showMainApp();
+        } else {
+            showLoginScreen();
+        }
+    } catch (error) {
+        console.error('Error checking auth status:', error);
+        showLoginScreen();
+    }
+}
+
+// Show login screen
+function showLoginScreen() {
+    document.getElementById('loginScreen').style.display = 'block';
+    document.getElementById('mainApp').style.display = 'none';
+}
+
+// Show main app
+function showMainApp() {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'block';
+
+    // Display user name
+    if (currentUser) {
+        const userName = document.getElementById('userName');
+        userName.textContent = currentUser.name || currentUser.email || 'User';
+    }
+}
+
+// Handle login button click
+function handleLogin() {
+    window.location.href = '/auth/login';
+}
+
+// Handle logout button click
+function handleLogout() {
+    window.location.href = '/auth/logout';
+}
+
 // Sample scenarios from SAMPLE_SCENARIOS.md
 const SCENARIOS = [
     {
@@ -71,20 +120,40 @@ let currentTreeData = null;
 let currentFormat = 'svg';
 let currentScenario = null;
 
-// DOM Elements
-const form = document.getElementById('scenarioForm');
-const generateBtn = document.getElementById('generateBtn');
-const clearBtn = document.getElementById('clearBtn');
-const loadingState = document.getElementById('loadingState');
-const errorState = document.getElementById('errorState');
-const errorMessage = document.getElementById('errorMessage');
-const resultsSection = document.getElementById('resultsSection');
-const treeVisualization = document.getElementById('treeVisualization');
-const jsonOutput = document.getElementById('jsonOutput');
+// Initialize authentication check on page load
+checkAuthStatus();
 
-// Event Listeners
-form.addEventListener('submit', handleGenerate);
-clearBtn.addEventListener('click', handleClear);
+// DOM Elements - will be set after DOM loads
+let form, generateBtn, clearBtn, loadingState, errorState, errorMessage, resultsSection, treeVisualization, jsonOutput;
+
+// Wait for DOM to be fully loaded before attaching event listeners
+document.addEventListener('DOMContentLoaded', () => {
+    // Get DOM elements
+    form = document.getElementById('scenarioForm');
+    generateBtn = document.getElementById('generateBtn');
+    clearBtn = document.getElementById('clearBtn');
+    loadingState = document.getElementById('loadingState');
+    errorState = document.getElementById('errorState');
+    errorMessage = document.getElementById('errorMessage');
+    resultsSection = document.getElementById('resultsSection');
+    treeVisualization = document.getElementById('treeVisualization');
+    jsonOutput = document.getElementById('jsonOutput');
+
+    // Auth buttons
+    const loginBtn = document.getElementById('loginBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    // Event Listeners
+    if (form) form.addEventListener('submit', handleGenerate);
+    if (clearBtn) clearBtn.addEventListener('click', handleClear);
+    if (loginBtn) loginBtn.addEventListener('click', handleLogin);
+    if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
+
+    // Load random scenario if authenticated
+    if (currentUser) {
+        loadRandomScenario();
+    }
+});
 
 // Handle form submission
 async function handleGenerate(e) {
@@ -134,6 +203,15 @@ async function generateAttackTree(title, description) {
     });
 
     if (!response.ok) {
+        // Handle authentication errors
+        if (response.status === 401) {
+            showError('Session expired. Please log in again.');
+            setTimeout(() => {
+                window.location.href = '/auth/login';
+            }, 2000);
+            throw new Error('Authentication required');
+        }
+
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
     }
@@ -553,8 +631,5 @@ document.addEventListener('keydown', (e) => {
         fillSampleData();
     }
 });
-
-// Load random scenario on page load
-loadRandomScenario();
 
 console.log('Attack Tree Generator loaded. Press Ctrl+Shift+S to fill sample data.');

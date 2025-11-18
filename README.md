@@ -11,6 +11,7 @@ Generate visual attack trees from security scenarios using AI. This application 
 - 📊 **JSON Export**: Download attack tree data in JSON format for further analysis
 - ⚡ **Instant Visualization**: See your attack tree immediately after generation with no server round-trip
 - 📱 **Responsive Design**: Works on desktop and mobile devices
+- 🔐 **Google SSO Authentication**: Secure authentication using Google accounts
 
 ## Quick Start
 
@@ -54,20 +55,25 @@ Generate visual attack trees from security scenarios using AI. This application 
 
 ## Using the Web Interface
 
-1. **Enter Scenario Details**:
+1. **Sign In**:
+   - Click "Sign in with Google" on the landing page
+   - Authorize the application to access your Google account
+   - You'll be redirected back to the application
+
+2. **Enter Scenario Details**:
    - Provide a title for your attack scenario
    - Describe the scenario in detail (e.g., "An attacker wants to compromise a web application...")
 
-2. **Generate Attack Tree**:
+3. **Generate Attack Tree**:
    - Click "Generate Attack Tree"
    - Wait for AI to analyze and create the tree structure
 
-3. **View Results**:
+4. **View Results**:
    - See the interactive visual representation of the attack tree (rendered with D3.js)
    - Toggle between SVG and PNG format buttons
    - Expand JSON data to see the raw structure
 
-4. **Download**:
+5. **Download**:
    - Click "Download Image" to save as PNG or SVG (based on selected format)
    - Click "Download JSON" to save the attack tree data for further analysis
 
@@ -81,8 +87,15 @@ Generate visual attack trees from security scenarios using AI. This application 
 ### API Documentation
 - `GET /docs` - Interactive API documentation (Swagger UI)
 
-### Generate Attack Tree
+### Authentication Endpoints
+- `GET /auth/login` - Redirects to Google OAuth login
+- `GET /auth/callback` - Handles Google OAuth callback
+- `GET /auth/logout` - Logs out the current user
+- `GET /auth/user` - Returns current user information
+
+### Generate Attack Tree (Requires Authentication)
 - `POST /generate`
+- **Authentication**: Required (must be logged in with Google)
 - **Body**: `{"title": "string", "description": "string"}`
 - **Returns**: JSON attack tree structure
 
@@ -107,6 +120,7 @@ curl -X POST http://localhost:8080/generate \
 ├── app/
 │   ├── __init__.py          # Package marker
 │   ├── main.py              # FastAPI app and endpoints
+│   ├── auth.py              # Google OAuth authentication
 │   ├── tree_types.py        # Pydantic models
 │   ├── llm_client.py        # OpenAI integration
 │   └── prompt_utils.py      # Prompt engineering
@@ -122,17 +136,60 @@ curl -X POST http://localhost:8080/generate \
 └── README.md               # This file
 ```
 
+## Authentication Setup
+
+The application now requires Google SSO authentication. All users must sign in with a Google account to use the service.
+
+### Setting up Google OAuth
+
+1. **Create a Google Cloud Project**:
+   - Go to [Google Cloud Console](https://console.cloud.google.com/)
+   - Create a new project or select an existing one
+
+2. **Enable Google OAuth API**:
+   - In the left sidebar, navigate to "APIs & Services" > "Library"
+   - Search for "Google+ API" and enable it
+
+3. **Create OAuth 2.0 Credentials**:
+   - Go to "APIs & Services" > "Credentials"
+   - Click "Create Credentials" > "OAuth 2.0 Client ID"
+   - If prompted, configure the OAuth consent screen first:
+     - Select "External" user type
+     - Fill in app name, user support email, and developer contact
+     - Add scopes: `openid`, `email`, `profile`
+     - Add test users if needed
+
+4. **Configure OAuth Client**:
+   - Select "Web application" as the application type
+   - Add authorized redirect URIs:
+     - For local development: `http://localhost:8000/auth/callback`
+     - For production: `https://yourdomain.com/auth/callback`
+   - Click "Create"
+
+5. **Copy Credentials**:
+   - Copy the "Client ID" and "Client Secret"
+   - Add them to your `.env` file (see Configuration section below)
+
 ## Configuration
 
 Edit `.env` to configure:
 
 ```bash
-# Required
+# Required: OpenAI API
 OPENAI_API_KEY=your-api-key-here
+
+# Required: Google OAuth
+GOOGLE_CLIENT_ID=your-google-client-id-here
+GOOGLE_CLIENT_SECRET=your-google-client-secret-here
+
+# Required: Session Security
+# Generate a secure key using: python -c "import secrets; print(secrets.token_urlsafe(32))"
+SECRET_KEY=your-secret-key-change-in-production
 
 # Optional
 OPENAI_ORG_ID=your-org-id
 LLM_MODEL=gpt-4o-mini  # or gpt-4, gpt-3.5-turbo
+REDIRECT_URI=http://localhost:8000/auth/callback  # Update for production
 ```
 
 ## Testing

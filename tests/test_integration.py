@@ -13,6 +13,24 @@ def client():
 
 
 @pytest.fixture
+def mock_user():
+    """Mock authenticated user data."""
+    return {
+        "email": "test@example.com",
+        "name": "Test User",
+        "sub": "123456789"
+    }
+
+
+@pytest.fixture
+def mock_auth(mock_user):
+    """Mock the authentication system to return a test user."""
+    with patch("app.auth.get_current_user", return_value=mock_user):
+        with patch("app.auth.require_auth", return_value=mock_user):
+            yield
+
+
+@pytest.fixture
 def mock_llm_response():
     """Mock LLM response with valid attack tree JSON."""
     return json.dumps({
@@ -70,7 +88,7 @@ class TestGenerateEndpoint:
     """Integration tests for /generate endpoint."""
 
     @patch("app.main.generate_attack_tree_text", new_callable=AsyncMock)
-    def test_generate_success(self, mock_llm, client, mock_llm_response):
+    def test_generate_success(self, mock_llm, client, mock_llm_response, mock_auth):
         """Test successful attack tree generation."""
         mock_llm.return_value = mock_llm_response
 
@@ -90,7 +108,7 @@ class TestGenerateEndpoint:
         assert data["nodes"][0]["probability"] == 0.7
 
     @patch("app.main.generate_attack_tree_text", new_callable=AsyncMock)
-    def test_generate_with_markdown_wrapped_json(self, mock_llm, client, mock_llm_response_wrapped):
+    def test_generate_with_markdown_wrapped_json(self, mock_llm, client, mock_llm_response_wrapped, mock_auth):
         """Test generation with LLM response wrapped in markdown."""
         mock_llm.return_value = mock_llm_response_wrapped
 
@@ -132,7 +150,7 @@ class TestGenerateEndpoint:
         assert response.status_code == 422
 
     @patch("app.main.generate_attack_tree_text", new_callable=AsyncMock)
-    def test_generate_invalid_json_response(self, mock_llm, client):
+    def test_generate_invalid_json_response(self, mock_llm, client, mock_auth):
         """Test handling of invalid JSON from LLM."""
         mock_llm.return_value = "This is not valid JSON at all"
 
@@ -148,7 +166,7 @@ class TestGenerateEndpoint:
         assert "Failed to parse LLM output" in response.json()["detail"]
 
     @patch("app.main.generate_attack_tree_text", new_callable=AsyncMock)
-    def test_generate_invalid_schema(self, mock_llm, client):
+    def test_generate_invalid_schema(self, mock_llm, client, mock_auth):
         """Test handling of JSON that doesn't match AttackTree schema."""
         mock_llm.return_value = json.dumps({
             "goal": "Test",
@@ -174,6 +192,32 @@ class TestGenerateEndpoint:
         assert "Validation error" in response.json()["detail"]
 
 
+class TestAuthentication:
+    """Tests for authentication and authorization."""
+
+    def test_generate_requires_authentication(self, client):
+        """Test that /generate endpoint requires authentication."""
+        response = client.post(
+            "/generate",
+            json={
+                "title": "Test Attack",
+                "description": "Test description"
+            }
+        )
+
+        assert response.status_code == 401
+        assert "Authentication required" in response.json()["detail"]
+
+    def test_auth_user_endpoint(self, client):
+        """Test that /auth/user returns not authenticated without session."""
+        response = client.get("/auth/user")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["authenticated"] is False
+        assert data["user"] is None
+
+
 class TestAppHealth:
     """Basic app health tests."""
 
@@ -184,7 +228,7 @@ class TestAppHealth:
         assert response.status_code == 200
 
     @patch("app.main.generate_attack_tree_text", new_callable=AsyncMock)
-    def test_full_workflow_generate(self, mock_llm, client, mock_llm_response):
+    def test_full_workflow_generate(self, mock_llm, client, mock_llm_response, mock_auth):
         """Test complete workflow: generate attack tree."""
         mock_llm.return_value = mock_llm_response
 
