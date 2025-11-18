@@ -1,6 +1,75 @@
+// Sample scenarios from SAMPLE_SCENARIOS.md
+const SCENARIOS = [
+    {
+        title: 'E-Commerce Customer Data Theft',
+        description: 'An attacker wants to steal customer credit card information and personal data from an e-commerce platform. The platform uses HTTPS, stores payment data in a PCI-DSS compliant database, has a web application firewall, implements rate limiting, and uses tokenization for credit card processing. The system has admin panels, customer-facing web applications, and integrates with third-party payment processors.'
+    },
+    {
+        title: 'Smart Home Device Takeover',
+        description: 'An attacker aims to gain control of smart home devices including security cameras, door locks, and thermostats. The devices communicate via WiFi and a central hub, use cloud services for remote access, have mobile apps for control, and implement firmware update mechanisms. Some devices use default credentials and have known vulnerabilities.'
+    },
+    {
+        title: 'Business Email Compromise Attack',
+        description: 'An attacker wants to compromise executive email accounts to perform wire fraud and steal sensitive business information. The organization uses Office 365 with multi-factor authentication, has email filtering and anti-phishing tools, conducts security awareness training, and has policies for financial transactions. Executives frequently travel and access email from various locations.'
+    },
+    {
+        title: 'Electronic Health Records Theft',
+        description: 'An attacker seeks to access and exfiltrate patient medical records from a hospital system. The hospital uses Electronic Health Records (EHR) systems with role-based access control, encrypts data at rest and in transit, has audit logging, complies with HIPAA regulations, and has multiple access points including doctor workstations, nurse stations, and administrative terminals.'
+    },
+    {
+        title: 'Mobile Banking Application Compromise',
+        description: 'An attacker wants to steal money from user accounts through a mobile banking application. The app uses certificate pinning, implements biometric authentication, has transaction limits, uses device fingerprinting, includes fraud detection systems, and communicates with backend services through encrypted APIs. Users can transfer money, pay bills, and view account information.'
+    },
+    {
+        title: 'AWS Cloud Infrastructure Compromise',
+        description: 'An attacker aims to gain control of an organization\'s AWS cloud infrastructure to steal data, mine cryptocurrency, or launch attacks. The infrastructure includes EC2 instances, S3 buckets, RDS databases, Lambda functions, and uses IAM for access control. Some services are publicly accessible, and the organization uses multiple AWS accounts with varying security configurations.'
+    },
+    {
+        title: 'High-Profile Social Media Account Takeover',
+        description: 'An attacker wants to take control of a celebrity or corporate social media account to spread misinformation, scam followers, or damage reputation. The account has two-factor authentication enabled, uses a strong password, is accessed from multiple devices and locations, has recovery email and phone number configured, and the platform has account protection features and anomaly detection.'
+    },
+    {
+        title: 'Software Supply Chain Compromise',
+        description: 'An attacker seeks to inject malicious code into a widely-used open-source software library to compromise downstream applications. The library is hosted on GitHub, uses automated CI/CD pipelines, has multiple maintainers with varying security practices, is distributed via npm/PyPI, and is used by thousands of applications. The attack could target the build process, dependencies, or maintainer accounts.'
+    },
+    {
+        title: 'Data Center Physical Access Attack',
+        description: 'An attacker wants to gain physical access to a data center to install hardware implants, steal hard drives, or cause service disruption. The facility has perimeter fencing, security guards, badge access systems, biometric scanners, video surveillance, mantrap entrances, and is located in a secure building. The data center houses critical servers and network equipment.'
+    },
+    {
+        title: 'Enterprise Ransomware Attack',
+        description: 'An attacker aims to deploy ransomware across a corporate network to encrypt all business data and demand payment. The network has endpoint protection, network segmentation, backup systems, email filtering, user access controls, patch management processes, and security monitoring. The organization has remote workers, on-premise servers, and cloud services.'
+    },
+    {
+        title: 'RESTful API Exploitation',
+        description: 'An attacker wants to exploit vulnerabilities in a company\'s REST API to access unauthorized data or perform privilege escalation. The API uses OAuth 2.0 authentication, has rate limiting, implements input validation, uses HTTPS, has API keys for different access levels, and serves both web and mobile applications. Some endpoints are public while others require authentication.'
+    },
+    {
+        title: 'Cryptocurrency Exchange Wallet Theft',
+        description: 'An attacker seeks to steal cryptocurrency from a digital currency exchange\'s hot and cold wallets. The exchange uses multi-signature wallets, implements withdrawal limits and delays, has KYC/AML procedures, uses hardware security modules, maintains cold storage for majority of funds, and has real-time transaction monitoring. The platform handles millions in daily trading volume.'
+    },
+    {
+        title: 'SCADA System Sabotage',
+        description: 'An attacker wants to disrupt operations of an industrial facility by compromising SCADA/ICS systems controlling manufacturing processes. The systems use proprietary protocols, have air-gapped networks, implement physical security controls, use legacy operating systems with limited patching, have HMI interfaces for operators, and control critical infrastructure like water treatment, power generation, or chemical processing.'
+    },
+    {
+        title: 'Academic Research IP Theft',
+        description: 'An attacker aims to steal valuable research data and intellectual property from a university research department. The university has network access controls, uses VPN for remote access, has shared computing resources, stores data on network drives and cloud services, has student and faculty accounts with varying privileges, and the research involves sensitive data that could be valuable to competitors or nation-states.'
+    },
+    {
+        title: 'Self-Driving Car Remote Control',
+        description: 'An attacker wants to remotely take control of autonomous vehicles to cause accidents, kidnapping, or mass disruption. The vehicles use multiple sensors (cameras, lidar, radar), communicate with cloud services for updates and navigation, have over-the-air update mechanisms, use AI for decision-making, connect to mobile apps, and implement various safety systems. The attack could target the vehicle directly or the supporting infrastructure.'
+    },
+    {
+        title: 'Password Reset Attack',
+        description: 'An attacker wants to gain access to a user account by exploiting the password reset functionality. The system sends reset links via email and asks security questions.'
+    }
+];
+
 // Global state
 let currentTreeData = null;
 let currentFormat = 'svg';
+let currentScenario = null;
 
 // DOM Elements
 const form = document.getElementById('scenarioForm');
@@ -21,10 +90,14 @@ clearBtn.addEventListener('click', handleClear);
 async function handleGenerate(e) {
     e.preventDefault();
 
-    const title = document.getElementById('title').value.trim();
-    const description = document.getElementById('description').value.trim();
+    let title = document.getElementById('title').value.trim();
+    let description = document.getElementById('description').value.trim();
 
-    if (!title || !description) {
+    // If fields are empty, use the current scenario
+    if (!title && !description && currentScenario) {
+        title = currentScenario.title;
+        description = currentScenario.description;
+    } else if (!title || !description) {
         showError('Please fill in both title and description');
         return;
     }
@@ -412,6 +485,7 @@ function downloadJSON() {
 // Clear form
 function handleClear() {
     form.reset();
+    loadRandomScenario();
     document.getElementById('title').focus();
 }
 
@@ -422,6 +496,7 @@ function generateNew() {
     currentTreeData = null;
     currentFormat = 'svg';
     form.reset();
+    loadRandomScenario();
     document.getElementById('title').focus();
 }
 
@@ -455,6 +530,16 @@ function hideResults() {
     resultsSection.style.display = 'none';
 }
 
+// Select and display a random scenario
+function loadRandomScenario() {
+    const randomIndex = Math.floor(Math.random() * SCENARIOS.length);
+    currentScenario = SCENARIOS[randomIndex];
+
+    // Set as placeholder values
+    document.getElementById('title').placeholder = currentScenario.title;
+    document.getElementById('description').placeholder = currentScenario.description;
+}
+
 // Sample data for testing (can be removed in production)
 function fillSampleData() {
     document.getElementById('title').value = 'Web Application Breach';
@@ -468,5 +553,8 @@ document.addEventListener('keydown', (e) => {
         fillSampleData();
     }
 });
+
+// Load random scenario on page load
+loadRandomScenario();
 
 console.log('Attack Tree Generator loaded. Press Ctrl+Shift+S to fill sample data.');
