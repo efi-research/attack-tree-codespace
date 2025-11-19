@@ -123,22 +123,82 @@ async function handleGenerate(e) {
     }
 }
 
-// Call the /generate endpoint
+// Call the /generate endpoint with SSE streaming
 async function generateAttackTree(title, description) {
-    const response = await fetch('/generate', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ title, description })
+    return new Promise((resolve, reject) => {
+        // Show streaming preview
+        const streamingPreview = document.getElementById('streamingPreview');
+        const streamingContent = document.getElementById('streamingContent');
+        streamingPreview.style.display = 'block';
+        streamingContent.textContent = '';
+
+        let accumulatedContent = '';
+
+        // Make POST request and get stream URL
+        fetch('/generate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ title, description })
+        }).then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+
+            function processStream() {
+                reader.read().then(({ done, value }) => {
+                    if (done) {
+                        streamingPreview.style.display = 'none';
+                        return;
+                    }
+
+                    const chunk = decoder.decode(value, { stream: true });
+                    const lines = chunk.split('\n');
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            try {
+                                const data = JSON.parse(line.substring(6));
+
+                                if (data.type === 'start') {
+                                    console.log('Stream started:', data.message);
+                                } else if (data.type === 'token') {
+                                    accumulatedContent += data.content;
+                                    streamingContent.textContent = accumulatedContent;
+                                    // Auto-scroll to bottom
+                                    streamingContent.scrollTop = streamingContent.scrollHeight;
+                                } else if (data.type === 'done') {
+                                    streamingPreview.style.display = 'none';
+                                    resolve(data.tree);
+                                    return;
+                                } else if (data.type === 'error') {
+                                    streamingPreview.style.display = 'none';
+                                    reject(new Error(data.message));
+                                    return;
+                                }
+                            } catch (e) {
+                                console.error('Error parsing SSE data:', e);
+                            }
+                        }
+                    }
+
+                    processStream();
+                }).catch(error => {
+                    streamingPreview.style.display = 'none';
+                    reject(error);
+                });
+            }
+
+            processStream();
+        }).catch(error => {
+            streamingPreview.style.display = 'none';
+            reject(error);
+        });
     });
-
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
 }
 
 // Render tree using D3.js in the frontend
